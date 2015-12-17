@@ -1,79 +1,18 @@
 //
 //    FILE: Complex.cpp
 //  AUTHOR: Rob Tillaart
-// VERSION: see COMPLEX_LIB_VERSION
+// VERSION: 0.1.09
 // PURPOSE: library for Complex math for Arduino
 //     URL: http://arduino.cc/playground/Main/ComplexMath
 //
 // Released to the public domain
 //
 
+// 0.1.09 - added (0,0) constructor
+// 0.1.08 - refactor
+// 0.1.07 - refactor interfaces
+
 #include "complex.h"
-
-Complex::Complex(double real, double imag)
-{
-    re = real;
-    im = imag;
-}
-
-Complex::Complex(const Complex &c)
-{
-    re = c.re;
-    im = c.im;
-}
-
-Complex::Complex(double d)
-{
-    re = d;
-    im = 0;
-}
-
-void Complex::set(double real, double imag)
-{
-    re = real;
-    im = imag;
-}
-
-double Complex::real()
-{
-    return re;
-}
-
-double Complex::imag()
-{
-    return im;
-}
-
-// polar2cartesian
-void Complex::polar(double modulus, double phase)
-{
-    re = modulus * cos(phase);
-    im = modulus * sin(phase);
-}
-
-double Complex::phase()
-{
-    return atan2(im, re);
-}
-
-double Complex::modulus()
-{
-    return hypot(re, im);
-}
-
-// conjugate is the number mirrored in x-axis
-Complex Complex::conjugate()
-{
-    return Complex(re,-im);
-}
-
-Complex Complex::reciprocal()
-{
-    double f = 1.0/(re*re + im*im);
-    double r = re*f;
-    double i = -im*f;
-    return Complex(r,i);
-}
 
 // PRINTING
 size_t Complex::printTo(Print& p) const
@@ -86,13 +25,28 @@ size_t Complex::printTo(Print& p) const
     return n;
 };
 
+void Complex::polar(const double modulus, const double phase)
+{
+    re = modulus * cos(phase);
+    im = modulus * sin(phase);
+}
+
+Complex Complex::reciprocal()
+{
+    double f = 1.0/(re*re + im*im);
+    double r = re*f;
+    double i = -im*f;
+    return Complex(r,i);
+}
+
+
 // EQUALITIES
-bool Complex::operator == (Complex c)
+bool Complex::operator == (const Complex &c)
 {
     return (re == c.re) && (im == c.im);
 }
 
-bool Complex::operator != (Complex c)
+bool Complex::operator != (const Complex &c)
 {
     return (re != c.re) || (im != c.im);
 }
@@ -104,61 +58,64 @@ Complex Complex::operator - ()
 }
 
 // BASIC MATH
-Complex Complex::operator + (Complex c)
+Complex Complex::operator + (const Complex &c)
 {
     return Complex(re + c.re, im + c.im);
 }
 
-Complex Complex::operator - (Complex c)
+Complex Complex::operator - (const Complex &c)
 {
     return Complex(re - c.re, im - c.im);
 }
 
-Complex Complex::operator * (Complex c)
+Complex Complex::operator * (const Complex &c)
 {
     double r = re * c.re - im * c.im;
     double i = re * c.im + im * c.re;
     return Complex(r, i);	
 }
 
-Complex Complex::operator / (Complex c)
+Complex Complex::operator / (const Complex &c)
 {
-    double f = 1.0/(c.re*c.re + c.im*c.im); 
-    double r = re * c.re + im * c.im;
-    double i = im * c.re - re * c.im;
-    return Complex(r * f, i * f);
+    double f = 1.0/(c.re*c.re + c.im*c.im);
+    double r = (re * c.re + im * c.im) * f;
+    double i = (im * c.re - re * c.im) * f;
+    return Complex(r, i);
 }
 
-void Complex::operator += (Complex c)
+Complex& Complex::operator += (const Complex &c)
 {
     re += c.re;
     im += c.im;
+    return *this;
 }
 
-void Complex::operator -= (Complex c)
+Complex& Complex::operator -= (const Complex &c)
 {
     re -= c.re;
     im -= c.im;
+    return *this;
 }
 
-void Complex::operator *= (Complex c)
+Complex& Complex::operator *= (const Complex &c)
 {
     double r = re * c.re - im * c.im;
     double i = re * c.im + im * c.re;
     re = r;
     im = i;
+    return *this;
 }
 
-void Complex::operator /= (Complex c)
+Complex& Complex::operator /= (const Complex &c)
 {
     double f = 1.0/(c.re*c.re + c.im*c.im);
-    double r = re * c.re + im * c.im;
-    double i = re * c.im - im * c.re;
-    re = r*f;
-    im = -i*f;
+    double r = (re * c.re + im * c.im) * f;
+    double i = (im * c.re - re * c.im) * f;
+    re = r;
+    im = i;
+    return *this;
 }
 
-#ifdef COMPLEX_EXTENDED
 //
 // POWER FUNCTIONS
 //
@@ -166,7 +123,7 @@ Complex Complex::c_sqr()
 {
     double r = re * re - im * im;
     double i = 2 * re * im;
-    return Complex(r,i);
+    return Complex(r, i);
 }
 
 Complex Complex::c_sqrt()
@@ -175,7 +132,7 @@ Complex Complex::c_sqrt()
     double r = sqrt(0.5 * (m+re));
     double i = sqrt(0.5 * (m-re));
     if (im < 0) i = -i;
-    return Complex(r,i);
+    return Complex(r, i);
 }
 
 Complex Complex::c_exp()
@@ -192,35 +149,39 @@ Complex Complex::c_log()
     return Complex(log(m), p);
 }
 
-Complex Complex::c_pow(Complex c)
+Complex Complex::c_pow(const Complex &c)
 {
-    Complex t = c * c_log();
+    Complex t = c_log();
+    t = t * c;
     return t.c_exp();
 }
 
-Complex Complex::c_logn(Complex c)
+Complex Complex::c_logn(const Complex &c)
 {
-    return c_log()/c.c_log();
+    Complex t = c;
+    return c_log()/t.c_log();
 }
 
 Complex Complex::c_log10()
 {
     return c_logn(10);
 }
-#endif
 
-#ifdef COMPLEX_GONIO_1
 //
-// GONIO I - SIN COS TAN 
+// GONIO I - SIN COS TAN
 //
 Complex Complex::c_sin()
 {
-    return Complex(sin(re) * cosh(im), cos(re) * sinh(im));
+    double s = sin(re);
+    double c = sqrt(1.0-s*s);
+    return Complex(s * cosh(im), c * sinh(im));
 }
 
 Complex Complex::c_cos()
 {
-    return Complex(cos(re) * cosh(im), -sin(re) * sinh(im));
+    double s = sin(re);
+    double c = sqrt(1.0-s*s);
+    return Complex(c * cosh(im), -s * sinh(im));
 }
 
 Complex Complex::c_tan()
@@ -243,7 +204,7 @@ Complex Complex::c_tan()
     return c_sin() / c_cos();
 }
 
-Complex Complex::gonioHelper1(int mode)
+Complex Complex::gonioHelper1(const byte mode)
 {
     Complex c = (one - this->c_sqr()).c_sqrt();
     if (mode == 0)
@@ -270,11 +231,9 @@ Complex Complex::c_acos()
 
 Complex Complex::c_atan()
 {
-    return (Complex(0,-1) * (Complex(re, im - 1)/Complex(-re, -im - 1)).c_log())/2;
+    return (Complex(0,-1) * (Complex(re, im - 1)/Complex(-re, -im - 1)).c_log()) * 0.5;
 }
-#endif
 
-#ifdef COMPLEX_GONIO_2
 //
 // GONIO II - CSC SEC COT
 //
@@ -307,20 +266,22 @@ Complex Complex::c_acot()
 {
     return (one / *this).c_atan();
 }
-#endif
 
-#ifdef COMPLEX_GONIO_3
 //
 // GONIO HYPERBOLICUS I
 //
 Complex Complex::c_sinh()
 {
-    return Complex(sinh(re) * cos(im), cosh(re)* sin(im));
+    double s = sin(im);
+    double c = sqrt(1.0 - s*s);
+    return Complex(sinh(re) * c, cosh(re)* s);
 }
 
 Complex Complex::c_cosh()
 {
-    return Complex(cosh(re) * cos(im), sinh(re)* sin(im));
+    double s = sin(im);
+    double c = sqrt(1.0-s*s);
+    return Complex(cosh(re) * c, sinh(re)* s);
 }
 
 Complex Complex::c_tanh()
@@ -328,10 +289,10 @@ Complex Complex::c_tanh()
     return c_sinh() / c_cosh();
 }
 
-Complex Complex::gonioHelper2(int mode)
+Complex Complex::gonioHelper2(const byte mode)
 {
     Complex c = c_sqr();
-    if (mode==0)
+    if (mode == 0)
     {
         c += 1;
     }
@@ -357,11 +318,9 @@ Complex Complex::c_atanh()
 {
     Complex c = (*this + one).c_log();
     c = c - (-(*this - one)).c_log();
-    return c/2;
+    return c * 0.5;
 }
-#endif
 
-#ifdef COMPLEX_GONIO_4
 //
 // GONIO HYPERBOLICUS II
 //
@@ -394,6 +353,5 @@ Complex Complex::c_acoth()
 {
     return (one / *this).c_atanh();
 }
-#endif
 
 // --- END OF FILE ---

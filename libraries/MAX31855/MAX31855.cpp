@@ -1,12 +1,17 @@
 //
 //    FILE: MAX31855.cpp
 //  AUTHOR: Rob Tillaart
-// VERSION: 0.1.03
+// VERSION: 0.1.08
 // PURPOSE: MAX31855 - Thermocouple
 //    DATE: 2014-01-01
-//     URL:
+//     URL: http://forum.arduino.cc/index.php?topic=208061
 //
 // HISTORY:
+// 0.1.08 2015-12-06 replaced all temperature calls with one TCfactor + update demos.
+// 0.1.07 2015-12-06 updated TC factors from the MAX31855 datasheet
+// 0.1.06 2015-12-05 added support for other types of TC's (experimental)
+// 0.1.05 2015-07-12 refactor robust constructor
+// 0.1.04 2015-03-09 replaced float -> double (ARM support)
 // 0.1.03 fixed negative temperature
 // 0.1.02 added offset
 // 0.1.01 refactored speed/performance
@@ -23,6 +28,10 @@ MAX31855::MAX31855(uint8_t sclk, uint8_t cs, uint8_t miso)
     _cs = cs;
     _miso = miso;
     _offset = 0;
+    _TCfactor = 1;
+    _status = STATUS_NOREAD;
+    _temperature = -999;
+    _internal = -999;
 }
 
 void MAX31855::begin()
@@ -60,7 +69,7 @@ uint8_t MAX31855::read()
     // reserved bit 17
     value >>= 1;
 
-    // process temperature bit 18-31
+    // process temperature bit 18-30 + sign bit = 31
     _temperature = (value & 0x1FFF) * 0.25;
     if (value & 0x2000) // negative flag
     {
@@ -71,6 +80,7 @@ uint8_t MAX31855::read()
     return _status;
 }
 
+// TODO:  optimize performance by direct port manipulation?
 uint32_t MAX31855::_read(void)
 {
     uint32_t value = 0;

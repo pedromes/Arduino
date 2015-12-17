@@ -1,7 +1,7 @@
 //
 //    FILE: max31855_demo3.ino
 //  AUTHOR: Rob Tillaart
-// VERSION: 0.1.01
+// VERSION: 0.1.03
 // PURPOSE: thermocouple lib demo application
 //    DATE: 2014-01-02
 //     URL:
@@ -27,19 +27,19 @@ void setup()
   tc.begin();
 
   uint32_t start = micros();
-  for (int i=0; i< 10; i++) tc.read();
+  tc.read();
   uint32_t stop = micros();
-  Serial.print("10x read:\t");
+  Serial.print("read:\t");
   Serial.println(stop - start);
 
   start = micros();
-  float t1 = tc.getTemperature();
+  double t1 = tc.getTemperature();
   stop = micros();
   Serial.print("getTemperature:\t");
   Serial.println(stop - start);
 
   start = micros();
-  float t2 = tc.getInternal();
+  tc.getInternal();
   stop = micros();
   Serial.print("getInternal:\t");
   Serial.println(stop - start);
@@ -49,14 +49,14 @@ void setup()
   Serial.println(t2, 2);
   Serial.println();
 }
-
+ 
 void loop() 
 {
   // this loop returns multiples of about 73mSec (counter multiples of ~143)
   // so the # measurements per second is about 14?
   uint32_t counter = 0;
-  float t1 = tc.getTemperature();
-  float t2 = t1;
+  double t1 = tc.getTemperature();
+  double t2 = t1;
 
   uint32_t start = micros();
   while (t2 == t1)
@@ -75,10 +75,4 @@ void loop()
   Serial.println(t1, 2);
   Serial.println();
 }
-
-
-
-
-
-
-
+ 
